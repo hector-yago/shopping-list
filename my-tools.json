@@ -1,0 +1,10 @@
+{
+  "launcher": {
+    "type": "SCRIPT",
+    "target": "abrir-shopping-list.ps1",
+    "args": [],
+    "openUrl": "http://localhost:8096/",
+    "waitSeconds": 20,
+    "stopArgs": ["-Parar"]
+  }
+}

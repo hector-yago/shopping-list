@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "stores": [
+    { "id": "mercadona", "name": "Mercadona", "ini": "M", "color": "#1f7a3a", "custom": false, "active": true },
+    { "id": "lidl", "name": "Lidl", "ini": "L", "color": "#c2410c", "custom": false, "active": false },
+    { "id": "c-tienda1", "name": "Tienda del barrio", "ini": "Tb", "color": "#475569", "custom": true, "active": true }
+  ],
+  "products": [
+    {
+      "id": "p-leche", "name": "Leche entera", "unit": "ud", "defaultQty": 6, "createdAt": 1790000000000,
+      "prefs": { "mercadona": "p", "c-tienda1": "n" },
+      "history": [
+        { "id": "h1", "date": "2026-10-05", "storeId": "mercadona", "storeName": "Mercadona", "qty": 6, "price": 0.9, "pid": "c1" },
+        { "id": "h2", "date": "2026-11-02", "storeId": "lidl", "storeName": "Lidl", "qty": 6, "price": 0.8, "pid": "c2" }
+      ]
+    },
+    {
+      "id": "p-manzanas", "name": "Manzanas", "unit": "kg", "defaultQty": 0.5, "createdAt": 1790000000001,
+      "prefs": {}, "history": []
+    }
+  ],
+  "items": [
+    { "id": "i1", "productId": "p-leche", "qty": 6, "price": null, "status": "pending" },
+    { "id": "i2", "productId": "p-manzanas", "qty": 0.5, "price": 2.4, "status": "done" }
+  ],
+  "settings": { "theme": "dark", "sort": "newest", "viewStore": "mercadona", "lastStore": "mercadona", "thresholdPct": 20, "backupReminderDays": 14 },
+  "meta": { "lastExport": 1790000500000 }
+}
