@@ -22,6 +22,8 @@ PWA personal de lista de la compra: una sola lista que se filtra por supermercad
 - `?hoy=AAAA-MM-DD` y `window.__setToday`/`__store` solo funcionan en `localhost` (pruebas).
 - El origen `localhost` es el de My Tools (datos del PC); usar siempre `localhost`, no `127.0.0.1`.
 
+- Habituales: `product.hidden` (ocultar/mostrar a mano; se reinicia en `finalize`), filtro `habFilter` (visible|hidden|all) y orden `habSort` (az|last) en `settings`. Esquema 2.
+
 ## Release (regla general del usuario; cada cambio)
 1. Subir `version` en `package.json` y `npm run version:sync` (actualiza `js/version.js` y la caché del `sw.js`).
 2. Tests + e2e en verde.
@@ -30,6 +32,7 @@ PWA personal de lista de la compra: una sola lista que se filtra por supermercad
 5. En el iPhone, la PWA se actualiza al abrirla con conexión (service worker red-primero).
 
 ## Pendiente conocido
-- Repositorio remoto y GitHub Pages aún sin crear/publicar; commit inicial pendiente de autorización.
+- 0.2.0 (local, sin publicar): Habituales con ocultar/filtro/orden y etiqueta verde «En la lista»; migración de esquema 1→2.
+- 0.1.1 (local, sin publicar en Pages): exportar ya no falla si compartir ficheros no funciona (descarga). Publicada 0.1.0 el 2026-11-23 en `hector-yago/shopping-list` (commit b928cc2); URL `https://hector-yago.github.io/shopping-list/`. Remoto `origin` = `https://github.com/hector-yago/shopping-list.git` (el antiguo con 3 «p» redirige). Commits con identidad noreply del repo, no el correo personal.
 - Instalación y persistencia en iPhone real: prueba manual (`docs/pruebas.md`).
 - Sincronización iPhone↔PC / compartir lista; categorías por pasillo; logotipos reales: fuera de v1 (ADR 0001).

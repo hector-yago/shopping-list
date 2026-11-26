@@ -118,6 +118,7 @@ export function finalize(draft, { storeId = '', date }) {
   const returned = draft.items.filter((i) => i.status === 'na').length;
   draft.items = draft.items.filter((i) => i.status !== 'done');
   for (const i of draft.items) if (i.status === 'na') i.status = 'pending';
+  for (const p of draft.products) p.hidden = false; // los ocultos de Habituales se reinician con cada compra
   if (store) draft.settings.lastStore = store.id;
   return { bought: bought.length, returned, total, pid };
 }

@@ -2,7 +2,7 @@
 import { VERSION } from './version.js';
 import { compareNames, dayKey, eur, esc, fmtDate, fq, norm, num2, parseNum } from './format.js';
 import { activeStores, createCustomStore, storeById, UNIT_STEP, UNITS } from './stores.js';
-import { avgPrice, createHistoryEntry, createProduct, lastPurchase, sortByName } from './products.js';
+import { avgPrice, createHistoryEntry, createProduct, filterHabituales, lastPurchase, setHidden, sortByName, sortHabituales } from './products.js';
 import { addItem, buildList, finalize, iconStores, nextSort, removeItem, setStatus } from './list.js';
 import { daysAgo, pricedProducts, productPriceStats, purchasesOf, spendSince, trendOf } from './stats.js';
 import { createStore, indexedDbAdapter, memoryAdapter } from './store.js';
@@ -33,7 +33,8 @@ let store;
 let toastTimer;
 
 const SORT_SHORT = { az: 'A–Z', oldest: 'Última compra ↑', newest: 'Última compra ↓' };
-const SORT_ARIA = { az: 'orden alfabético', oldest: 'orden por última compra, la más antigua primero', newest: 'orden por última compra, la más reciente primero' };
+const HAB_FILTER_LABELS = [['visible', 'Visibles'], ['hidden', 'Ocultos'], ['all', 'Todos']];
+const SORT_ARIA ={ az: 'orden alfabético', oldest: 'orden por última compra, la más antigua primero', newest: 'orden por última compra, la más reciente primero' };
 const LEVEL_LABEL = { v: 'Válido (por defecto)', p: 'Preferido', n: 'No válido' };
 const NEXT_LEVEL = { v: 'p', p: 'n', n: 'v' };
 
@@ -146,18 +147,29 @@ function viewHabituales() {
   const d = store.state;
   const q = norm(ui.hq);
   const listed = new Set(d.items.map((i) => i.productId));
-  const rows = sortByName(d.products).filter((p) => !q || norm(p.name).includes(q)).map((p) => {
+  const { habFilter, habSort } = d.settings;
+  const hiddenCount = d.products.filter((p) => p.hidden).length;
+  const counts = { visible: d.products.length - hiddenCount, hidden: hiddenCount, all: d.products.length };
+  const rows = sortHabituales(filterHabituales(d.products, habFilter), habSort).filter((p) => !q || norm(p.name).includes(q)).map((p) => {
     const avg = avgPrice(p);
     const last = lastPurchase(p);
     const meta = [p.unit, last ? `última ${fmtDate(last)}` : 'nunca comprado', avg != null ? `media ${eur(avg)}` : ''].filter(Boolean).join(' · ');
     const inList = listed.has(p.id);
-    return `<li class="row"><button class="body" data-action="product" data-id="${esc(p.id)}"><span class="title">${esc(p.name)}</span><span class="meta">${esc(meta)}</span></button>
+    const id = esc(p.id);
+    const action = inList
+      ? '<span class="badge cheap">En la lista</span>'
+      : `<button class="btn small" data-action="${p.hidden ? 'unhide' : 'hide'}" data-id="${id}">${p.hidden ? 'Mostrar' : 'Ocultar'}</button>
+         ${p.hidden ? '' : `<button class="btn small" data-action="quick-add" data-id="${id}">＋ Añadir</button>`}`;
+    return `<li class="row${p.hidden ? ' is-hidden' : ''}"><button class="body" data-action="product" data-id="${id}"><span class="title">${esc(p.name)}${p.hidden ? ' <span class="badge">Oculto</span>' : ''}</span><span class="meta">${esc(meta)}</span></button>
       ${iconsHtml(iconStores(p, d.stores, 'all'))}
-      <button class="btn small" data-action="quick-add" data-id="${esc(p.id)}" ${inList ? 'disabled' : ''}>${inList ? 'En la lista' : '＋ Añadir'}</button></li>`;
+      ${action}</li>`;
   }).join('');
-  const empty = !d.products.length ? '<div class="empty"><b>Aún no hay habituales</b>Se crean solos al añadir productos nuevos en Compra, o con «+ Nuevo».</div>' : !rows ? '<div class="empty">Sin resultados.</div>' : '';
-  return `<header class="top"><div class="titles"><h1>Habituales</h1><div class="sub">${d.products.length} producto${d.products.length === 1 ? '' : 's'}</div></div><button class="pill" data-action="new-product">＋ Nuevo</button></header>
+  const emptyMsg = !d.products.length ? '' : q ? 'Sin resultados.' : habFilter === 'hidden' ? 'No hay productos ocultos.' : 'No hay productos visibles. Cambia el filtro.';
+  const empty = !d.products.length ? '<div class="empty"><b>Aún no hay habituales</b>Se crean solos al añadir productos nuevos en Compra, o con «+ Nuevo».</div>' : `<div class="empty">${emptyMsg}</div>`;
+  const filters = HAB_FILTER_LABELS.map(([k, label]) => `<button class="chip${habFilter === k ? ' on' : ''}" data-action="hab-filter" data-v="${k}" aria-pressed="${habFilter === k}">${label} (${counts[k]})</button>`).join('');
+  return `<header class="top"><div class="titles"><h1>Habituales</h1><div class="sub">${d.products.length} producto${d.products.length === 1 ? '' : 's'}${hiddenCount ? ` · ${hiddenCount} oculto${hiddenCount === 1 ? '' : 's'}` : ''}</div></div><button class="pill" data-action="new-product">＋ Nuevo</button></header>
     <div class="add"><input id="hq" type="search" placeholder="Buscar…" autocomplete="off" value="${esc(ui.hq)}" aria-label="Buscar habitual" /></div>
+    <div class="filters">${filters}<button class="pill" data-action="hab-sort" aria-label="Ordenar: ${habSort === 'az' ? 'orden alfabético' : 'última compra, la más reciente primero'}. Pulsa para cambiar">${habSort === 'az' ? 'A–Z' : 'Última compra'} ⇅</button></div>
     ${rows ? `<ul class="list">${rows}</ul>` : empty}`;
 }
 
@@ -562,21 +574,31 @@ async function doExport() {
   const json = store.exportJson();
   const name = `shopping-list-${today()}.json`;
   const file = new File([json], name, { type: 'application/json' });
+  const download = () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(file);
+    a.download = name;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  };
   try {
-    if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], title: 'Copia de Lista de la compra' });
-    else {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(file);
-      a.download = name;
-      document.body.append(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    let shared = false;
+    if (navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'Copia de Lista de la compra' });
+        shared = true;
+      } catch (err) {
+        if (err?.name === 'AbortError') return; // el usuario cerró la hoja de compartir
+        // Algunos navegadores (p. ej. Edge en Windows) anuncian que pueden compartir ficheros y luego fallan: se descarga.
+      }
     }
+    if (!shared) download();
     await store.markExported();
-    toast('Copia exportada.');
+    toast(shared ? 'Copia exportada.' : `Copia descargada: ${name}`);
   } catch (err) {
-    if (err?.name !== 'AbortError') toast(`No se pudo exportar: ${err.message}`);
+    toast(`No se pudo exportar: ${err.message}`);
   }
 }
 
@@ -635,6 +657,15 @@ document.addEventListener('click', async (e) => {
     case 'product': productSheet(id); break;
     case 'new-product': productSheet(null); break;
     case 'quick-add': { const r = await store.update((d) => addItem(d, id)); toast(r === 'exists' ? 'Ya está en la lista.' : 'Añadido a la compra.'); break; }
+    case 'hide': case 'unhide': {
+      const hide = action === 'hide';
+      const prev = structuredClone(store.state);
+      await store.update((d) => setHidden(d, id, hide));
+      toast(hide ? 'Ocultado (reaparece al finalizar la compra).' : 'Mostrado de nuevo.', 'Deshacer', () => store.update(() => prev));
+      break;
+    }
+    case 'hab-filter': await set((d) => { d.settings.habFilter = v; }); break;
+    case 'hab-sort': await set((d) => { d.settings.habSort = d.settings.habSort === 'az' ? 'last' : 'az'; }); break;
     case 'stat-product': priceSheet(id); break;
     case 'toggle-store': await set((d) => { const s = d.stores.find((x) => x.id === id); if (s) s.active = !s.active; }); break;
     case 'edit-store': storeSheet(id); break;

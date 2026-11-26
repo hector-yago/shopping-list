@@ -1,0 +1,206 @@
+{
+  "schemaVersion": 2,
+  "stores": [
+    {
+      "id": "mercadona",
+      "name": "Mercadona",
+      "ini": "M",
+      "color": "#1f7a3a",
+      "custom": false,
+      "active": true
+    },
+    {
+      "id": "carrefour",
+      "name": "Carrefour",
+      "ini": "Cf",
+      "color": "#1d4ed8",
+      "custom": false,
+      "active": true
+    },
+    {
+      "id": "lidl",
+      "name": "Lidl",
+      "ini": "L",
+      "color": "#c2410c",
+      "custom": false,
+      "active": false
+    },
+    {
+      "id": "dia",
+      "name": "Dia",
+      "ini": "D",
+      "color": "#b91c1c",
+      "custom": false,
+      "active": true
+    },
+    {
+      "id": "alcampo",
+      "name": "Alcampo",
+      "ini": "Ac",
+      "color": "#dc2626",
+      "custom": false,
+      "active": true
+    },
+    {
+      "id": "eroski",
+      "name": "Eroski",
+      "ini": "E",
+      "color": "#be123c",
+      "custom": false,
+      "active": true
+    },
+    {
+      "id": "aldi",
+      "name": "Aldi",
+      "ini": "Ad",
+      "color": "#0369a1",
+      "custom": false,
+      "active": true
+    },
+    {
+      "id": "consum",
+      "name": "Consum",
+      "ini": "Cs",
+      "color": "#d97706",
+      "custom": false,
+      "active": true
+    },
+    {
+      "id": "el-corte-ingles",
+      "name": "El Corte Inglés / Hipercor",
+      "ini": "EC",
+      "color": "#15803d",
+      "custom": false,
+      "active": false
+    },
+    {
+      "id": "ahorramas",
+      "name": "Ahorramás",
+      "ini": "Ah",
+      "color": "#7c3aed",
+      "custom": false,
+      "active": false
+    },
+    {
+      "id": "caprabo",
+      "name": "Caprabo",
+      "ini": "Cp",
+      "color": "#0e7490",
+      "custom": false,
+      "active": false
+    },
+    {
+      "id": "condis",
+      "name": "Condis",
+      "ini": "Cd",
+      "color": "#a21caf",
+      "custom": false,
+      "active": false
+    },
+    {
+      "id": "bonpreu",
+      "name": "Bonpreu / Esclat",
+      "ini": "Bp",
+      "color": "#4d7c0f",
+      "custom": false,
+      "active": false
+    },
+    {
+      "id": "gadis",
+      "name": "Gadis",
+      "ini": "Gd",
+      "color": "#b45309",
+      "custom": false,
+      "active": false
+    },
+    {
+      "id": "froiz",
+      "name": "Froiz",
+      "ini": "Fz",
+      "color": "#0f766e",
+      "custom": false,
+      "active": false
+    },
+    {
+      "id": "c-tienda1",
+      "name": "Tienda del barrio",
+      "ini": "Tb",
+      "color": "#475569",
+      "custom": true,
+      "active": true
+    }
+  ],
+  "products": [
+    {
+      "id": "p-leche",
+      "name": "Leche entera",
+      "unit": "ud",
+      "defaultQty": 6,
+      "prefs": {
+        "mercadona": "p",
+        "c-tienda1": "n"
+      },
+      "hidden": false,
+      "history": [
+        {
+          "id": "h1",
+          "date": "2026-10-05",
+          "storeId": "mercadona",
+          "storeName": "Mercadona",
+          "qty": 6,
+          "price": 0.9,
+          "pid": "c1"
+        },
+        {
+          "id": "h2",
+          "date": "2026-11-02",
+          "storeId": "lidl",
+          "storeName": "Lidl",
+          "qty": 6,
+          "price": 0.8,
+          "pid": "c2"
+        }
+      ],
+      "createdAt": 1790000000000
+    },
+    {
+      "id": "p-manzanas",
+      "name": "Manzanas",
+      "unit": "kg",
+      "defaultQty": 0.5,
+      "prefs": {},
+      "hidden": true,
+      "history": [],
+      "createdAt": 1790000000001
+    }
+  ],
+  "items": [
+    {
+      "id": "i1",
+      "productId": "p-leche",
+      "qty": 6,
+      "price": null,
+      "status": "pending"
+    },
+    {
+      "id": "i2",
+      "productId": "p-manzanas",
+      "qty": 0.5,
+      "price": 2.4,
+      "status": "done"
+    }
+  ],
+  "settings": {
+    "theme": "dark",
+    "sort": "newest",
+    "viewStore": "mercadona",
+    "lastStore": "mercadona",
+    "thresholdPct": 20,
+    "backupReminderDays": 14,
+    "habFilter": "visible",
+    "habSort": "az"
+  },
+  "meta": {
+    "lastExport": 1790000500000
+  }
+}

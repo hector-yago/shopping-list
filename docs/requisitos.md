@@ -7,6 +7,7 @@ Origen: petición del usuario (2026-11-23), redefinida y validada con una maquet
 | R1 | Una sola lista de la compra; el supermercado elegido filtra y marca qué productos salen. | `list.test` (lista), e2e |
 | R2 | Catálogo de súpers de España precargado; crear otros; ocultar (desactivar) los que no interesan. Solo los activos salen en Compra y en las fichas. | `list.test` (súpers), `store.test`, e2e |
 | R3 | Lista de **habituales** con alta, edición y baja. | e2e (Habituales) |
+| R3b | En Habituales se puede **ocultar/mostrar** un producto, **filtrar** (Visibles · Ocultos · Todos) y **ordenar** (A–Z · última compra); se recuerda la elección. Los ocultos reaparecen al finalizar la compra. Los que ya están en la lista llevan la etiqueta verde «En la lista». | unitarios (`list.test`, `store.test`) y e2e (Habituales) |
 | R4 | Por habitual: nivel por súper (preferido / válido / no válido); sin marcar = válido. | `list.test`, `store.test` (saneado) |
 | R5 | Por habitual: historial de compras con fecha, súper, cantidad y precio (si lo hay); se puede añadir/borrar a mano. | e2e, `stats.test` |
 | R6 | Pestaña **Compra**: añadir (nuevo o habitual), eliminar, marcar comprado, marcar no disponible, desmarcar, finalizar. | e2e |

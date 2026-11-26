@@ -8,7 +8,7 @@ export const HISTORY_LIMIT = 500;
 export const DEFAULT_THRESHOLD_PCT = 15;
 
 export function createProduct({ name, unit = 'ud', prefs = {}, defaultQty = 1 }, now = Date.now()) {
-  return { id: newId(), name: String(name).trim().slice(0, 120), unit: UNITS.includes(unit) ? unit : 'ud', defaultQty, prefs: { ...prefs }, history: [], createdAt: now };
+  return { id: newId(), name: String(name).trim().slice(0, 120), unit: UNITS.includes(unit) ? unit : 'ud', defaultQty, prefs: { ...prefs }, hidden: false, history: [], createdAt: now };
 }
 
 export function createHistoryEntry({ date, storeId = '', storeName = '', qty = 1, price = null, pid }) {
@@ -81,9 +81,36 @@ export function normalizeProduct(raw, storeIds) {
     unit: UNITS.includes(raw.unit) ? raw.unit : 'ud',
     defaultQty: Number.isFinite(raw.defaultQty) && raw.defaultQty > 0 ? raw.defaultQty : 1,
     prefs,
+    hidden: raw.hidden === true,
     history: history.slice(-HISTORY_LIMIT),
     createdAt: Number.isFinite(raw.createdAt) ? raw.createdAt : Date.now(),
   };
 }
 
 export const sortByName = (products) => [...products].sort((a, b) => compareNames(a.name, b.name));
+
+/** Habituales: filtra por visibilidad ('visible' | 'hidden' | 'all'). */
+export function filterHabituales(products, filter = 'visible') {
+  if (filter === 'all') return [...products];
+  return products.filter((p) => (filter === 'hidden' ? p.hidden === true : p.hidden !== true));
+}
+
+/** Habituales: 'az' por nombre; 'last' por última compra (más reciente primero, nunca comprados al final). */
+export function sortHabituales(products, mode = 'az') {
+  if (mode !== 'last') return sortByName(products);
+  const withLast = products.map((p) => ({ p, last: lastPurchase(p) }));
+  withLast.sort((a, b) => {
+    if (a.last === b.last) return compareNames(a.p.name, b.p.name);
+    if (a.last === null) return 1;
+    if (b.last === null) return -1;
+    return a.last < b.last ? 1 : -1;
+  });
+  return withLast.map((x) => x.p);
+}
+
+/** Oculta o muestra un producto en Habituales (borrador del documento). */
+export function setHidden(draft, productId, hidden) {
+  const product = draft.products.find((p) => p.id === productId);
+  if (!product) throw new Error('El producto no existe.');
+  product.hidden = hidden === true;
+}

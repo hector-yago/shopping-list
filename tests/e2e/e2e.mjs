@@ -205,6 +205,36 @@ try {
   await click('#sheet-root [data-sheet=close]');
   await shot('10-habituales');
 
+  // Habituales: ocultar, filtro, orden y etiqueta verde «En la lista»
+  const rowBtn = (act, name) => `[...document.querySelectorAll('.row')].find((r) => r.querySelector('.title').innerText.startsWith(${JSON.stringify(name)}))?.querySelector('[data-action=${act}]')`;
+  const hiddenOf = (name) => evaluate(`window.__store().state.products.find((p) => p.name.startsWith(${JSON.stringify(name)})).hidden`);
+  // producto que no esté en la lista (tiene botón Ocultar)
+  const TARGET = await evaluate(`document.querySelector('[data-action=hide]').closest('.row').querySelector('.title').innerText.trim()`);
+  await evaluate(`${rowBtn('hide', TARGET)}.click()`);
+  await sleep(150);
+  assert.equal(await hiddenOf(TARGET), true);
+  assert.equal(await evaluate(`!!${rowBtn('hide', TARGET)} || !![...document.querySelectorAll('.row .title')].find((t) => t.innerText.startsWith(${JSON.stringify(TARGET)}))`), false, 'oculto no debe verse en Visibles');
+  await click('[data-action=hab-filter][data-v=hidden]');
+  await sleep(150);
+  assert.equal(await evaluate(`!!${rowBtn('unhide', TARGET)}`), true, 'en Ocultos debe haber «Mostrar»');
+  await click('[data-action=hab-filter][data-v=all]');
+  await sleep(150);
+  assert.equal(await evaluate(`!!document.querySelector('.row.is-hidden')`), true, 'en Todos el oculto sale atenuado');
+  await evaluate(`${rowBtn('unhide', TARGET)}.click()`);
+  await sleep(150);
+  assert.equal(await hiddenOf(TARGET), false);
+  await click('[data-action=hab-filter][data-v=visible]');
+  await click('[data-action=hab-sort]');
+  await sleep(150);
+  assert.equal(await evaluate(`window.__store().state.settings.habSort`), 'last');
+  await click('[data-action=hab-sort]');
+  await sleep(150);
+  assert.equal(await evaluate(`window.__store().state.settings.habSort`), 'az');
+  // «En la lista» = píldora verde (no botón)
+  const inListColor = await evaluate(`(() => { const b = document.querySelector('.row > .badge.cheap'); return b ? { t: b.innerText, bg: getComputedStyle(b).backgroundColor } : null; })()`);
+  if (inListColor) assert.match(inListColor.t, /en la lista/i);
+  await shot('10b-habituales-filtros');
+
   // Súpers: desactivar uno y crear otro
   await tab('supers');
   await click('[data-action=toggle-store][data-id=aldi]');
@@ -234,6 +264,24 @@ try {
   await shot('12-actual-oscuro');
   await tab('stats');
   await shot('13-estadisticas-oscuro');
+
+  // Exportar desde la interfaz: si «compartir» falla (Edge en Windows), debe descargar el fichero igualmente
+  await tab('supers');
+  await evaluate(`(() => {
+    window.__downloads = [];
+    HTMLAnchorElement.prototype.click = function () { window.__downloads.push(this.download); };
+    navigator.canShare = () => true;
+    navigator.share = () => Promise.reject(new DOMException('Permission denied', 'NotAllowedError'));
+  })()`);
+  await click('[data-action=export]');
+  await sleep(300);
+  assert.match(await evaluate(`window.__downloads[0] ?? ''`), /^shopping-list-.*\.json$/, 'no se descargó el fichero tras fallar compartir');
+  assert.match(await text(), /Copia descargada/);
+  await evaluate(`navigator.share = () => Promise.reject(new DOMException('cerrado', 'AbortError'))`);
+  await evaluate(`window.__downloads.length = 0`);
+  await click('[data-action=export]');
+  await sleep(300);
+  assert.equal(await evaluate(`window.__downloads.length`), 0, 'cancelar compartir no debe descargar');
 
   // Exportar → contenido válido; service worker y manifiesto
   const exported = JSON.parse(await evaluate(`window.__store().exportJson()`));

@@ -12,3 +12,4 @@
 5. Modo avión: abre y funciona sin conexión.
 6. Exportar (hoja Compartir) y guardar en Archivos; probar Importar.
 7. Comprobar con el tema oscuro y con texto grande del sistema.
+8. Habituales: ocultar un producto, verlo en «Ocultos», mostrarlo, ordenar por última compra, y comprobar que tras finalizar una compra los ocultos reaparecen.

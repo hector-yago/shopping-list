@@ -6,10 +6,12 @@
 import { DEFAULT_THRESHOLD_PCT, normalizeProduct } from './products.js';
 import { DEFAULT_STORES, normalizeStores } from './stores.js';
 
-export const CURRENT_SCHEMA = 1;
+export const CURRENT_SCHEMA = 2;
 export const APP_ID = 'shopping-list';
 const STATUSES = ['pending', 'done', 'na'];
 const SORTS = ['az', 'oldest', 'newest'];
+export const HAB_FILTERS = ['visible', 'hidden', 'all'];
+export const HAB_SORTS = ['az', 'last'];
 
 export const DEFAULT_SETTINGS = Object.freeze({
   theme: 'system', // 'system' | 'light' | 'dark'
@@ -18,6 +20,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   lastStore: '', // último súper en el que se finalizó una compra
   thresholdPct: DEFAULT_THRESHOLD_PCT, // % sobre/bajo la media para marcar caro/barato
   backupReminderDays: 14,
+  habFilter: 'visible', // Habituales: 'visible' | 'hidden' | 'all'
+  habSort: 'az', // Habituales: 'az' | 'last' (última compra)
 });
 
 export function emptyDoc() {
@@ -28,6 +32,13 @@ export function emptyDoc() {
 const steps = {
   // 0 → 1: documento sin versión (p. ej. importado a mano). La normalización final hace el trabajo.
   0: (doc) => ({ ...doc, schemaVersion: 1 }),
+  // 1 → 2: Habituales puede ocultar productos (product.hidden) y recuerda filtro y orden (settings). Solo añade campos.
+  1: (doc) => ({
+    ...doc,
+    schemaVersion: 2,
+    products: Array.isArray(doc.products) ? doc.products.map((p) => ({ ...p, hidden: p?.hidden === true })) : doc.products,
+    settings: { habFilter: 'visible', habSort: 'az', ...(doc.settings ?? {}) },
+  }),
 };
 
 export function migrate(input) {
@@ -73,6 +84,8 @@ export function sanitize(doc) {
   const s = { ...DEFAULT_SETTINGS, ...(doc.settings ?? {}) };
   if (!['system', 'light', 'dark'].includes(s.theme)) s.theme = 'system';
   if (!SORTS.includes(s.sort)) s.sort = 'az';
+  if (!HAB_FILTERS.includes(s.habFilter)) s.habFilter = 'visible';
+  if (!HAB_SORTS.includes(s.habSort)) s.habSort = 'az';
   if (s.viewStore !== 'all' && !stores.some((x) => x.id === s.viewStore && x.active)) s.viewStore = 'all';
   if (!stores.some((x) => x.id === s.lastStore)) s.lastStore = '';
   s.thresholdPct = Number.isInteger(s.thresholdPct) && s.thresholdPct >= 1 && s.thresholdPct <= 100 ? s.thresholdPct : DEFAULT_THRESHOLD_PCT;

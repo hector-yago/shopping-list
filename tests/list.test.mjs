@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyDoc, migrate } from '../js/migrations.js';
-import { createHistoryEntry, createProduct, avgPrice, priceFlag, lastPurchase } from '../js/products.js';
+import { createHistoryEntry, createProduct, avgPrice, priceFlag, lastPurchase, filterHabituales, sortHabituales, setHidden } from '../js/products.js';
 import { addItem, buildList, finalize, iconStores, nextSort, setStatus } from '../js/list.js';
 import { createCustomStore, DEFAULT_STORES, normalizeStores } from '../js/stores.js';
 import { eur, fq, norm, parseNum } from '../js/format.js';
@@ -194,4 +194,38 @@ test('migrar el resultado de un documento vacío no pierde los súpers de la bas
   const { doc } = migrate({});
   assert.equal(doc.stores.length, DEFAULT_STORES.length);
   assert.equal(doc.settings.viewStore, 'all');
+});
+
+test('Habituales: ocultar, filtrar y ordenar por última compra (nunca comprados al final)', () => {
+  const { d, mk } = sample();
+  const [a, b, c, e] = ['Atún', 'Bonito', 'Caballa', 'Dorada'].map((n) => mk(n));
+  hist(a, [['2026-10-01', 1]]);
+  hist(b, [['2026-11-01', 1]]);
+  hist(c, [['2026-11-01', 1]]);
+  setHidden(d, b.id, true);
+  assert.deepEqual(filterHabituales(d.products, 'visible').map((p) => p.name), ['Atún', 'Caballa', 'Dorada']);
+  assert.deepEqual(filterHabituales(d.products, 'hidden').map((p) => p.name), ['Bonito']);
+  assert.equal(filterHabituales(d.products, 'all').length, 4);
+  assert.deepEqual(sortHabituales(d.products, 'az').map((p) => p.name), ['Atún', 'Bonito', 'Caballa', 'Dorada']);
+  assert.deepEqual(sortHabituales(d.products, 'last').map((p) => p.name), ['Bonito', 'Caballa', 'Atún', 'Dorada']);
+  setHidden(d, b.id, false);
+  assert.equal(b.hidden, false);
+  assert.throws(() => setHidden(d, 'no-existe', true));
+  assert.equal(e.hidden, false);
+});
+
+test('finalizar reinicia los ocultos de Habituales', () => {
+  const { d, mk } = sample();
+  const [a, b] = ['Atún', 'Bonito'].map((n) => mk(n));
+  addItem(d, a.id);
+  setStatus(d, d.items[0].id, 'done');
+  setHidden(d, b.id, true);
+  finalize(d, { storeId: '', date: '2026-11-26' });
+  assert.equal(b.hidden, false);
+});
+
+test('saneado: hidden, habFilter y habSort inválidos vuelven a su valor por defecto', () => {
+  const { doc } = migrate({ schemaVersion: 2, products: [{ id: 'x', name: 'Sal', hidden: 'sí' }, { id: 'y', name: 'Pan', hidden: true }], settings: { habFilter: 'zzz', habSort: 3 } });
+  assert.deepEqual(doc.products.map((p) => p.hidden), [false, true]);
+  assert.deepEqual([doc.settings.habFilter, doc.settings.habSort], ['visible', 'az']);
 });

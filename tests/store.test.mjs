@@ -34,9 +34,11 @@ test('migración: fixture de la v1 publicada se abre sin perder nada', async () 
   await adapter.put('doc', v1);
   const s = createStore(adapter);
   const info = await s.load();
-  assert.equal(info.migratedFrom, null);
+  assert.equal(info.migratedFrom, 1); // v1 → v2 (Habituales: ocultar)
   assert.equal(s.state.schemaVersion, CURRENT_SCHEMA);
   assert.equal(s.state.products.length, v1.products.length);
+  assert.ok(s.state.products.every((p) => p.hidden === false));
+  assert.deepEqual([s.state.settings.habFilter, s.state.settings.habSort], ['visible', 'az']);
   assert.deepEqual(s.state.products[0].history.map((h) => [h.date, h.price, h.storeName]), v1.products[0].history.map((h) => [h.date, h.price, h.storeName]));
   assert.deepEqual(s.state.products[0].prefs, v1.products[0].prefs);
   assert.equal(s.state.products[1].defaultQty, 0.5);
